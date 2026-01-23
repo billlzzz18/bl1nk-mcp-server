@@ -1,88 +1,64 @@
-# structure.schema.yaml - เธชเธณเธซเธฃเธฑเธ MCP Blink Memory TypeScript Edition
+# structure.schema.yaml - ปรับปรุงเพื่อประสิทธิภาพและมาตรฐาน MCP สูงสุด
 name: "mcp-blink-memory-structure"
-version: "2.0.0"
-description: "เนเธเธฃเธเธชเธฃเนเธฒเธเนเธเธฃเน€เธเธเธ•เน MCP Blink Memory เนเธเธ TypeScript + JSON-RPC 2.0"
+version: "2.1.0"
+description: "โครงสร้างโปรเจกต์แบบ Optimized TypeScript + MCP SDK Standard"
 
 required_folders:
-  - src
-  - src/server
-  - src/server/handlers
+  # --- Layer 1: Core Implementation ---
   - src/core
-  - src/types
-  - src/storage
-  - src/utils
-  - src/core/memory-graph
-  - src/core/embedding-service
-  - src/core/auto-tag-service
-  - src/core/memory0-service
-  - src/core/system
-  - memory
+  - src/core/graph          # เปลี่ยนจาก memory-graph เพื่อความกระชับ
+  - src/core/embeddings     # ระบบจัดการ Vector/Embeddings
+  - src/core/tagging        # ระบบ NLP และ Auto-tagging
+  - src/core/persistence    # ส่วนติดต่อกับ JSON Storage (Data Access Layer)
+  
+  # --- Layer 2: MCP Server Layer ---
+  - src/server
+  - src/server/tools        # จัดกลุ่มตามแนวทาง MCP: Tools (ฟังก์ชันที่ AI เรียกใช้)
+  - src/server/resources    # จัดกลุ่มตามแนวทาง MCP: Resources (ข้อมูลที่ AI อ่าน)
+  - src/server/prompts      # จัดกลุ่มตามแนวทาง MCP: Prompts (Template คำสั่ง)
+  
+  # --- Layer 3: Support & Config ---
+  - src/types               # Shared TypeScript Interfaces
+  - src/utils               # Helper functions
+  - data                    # เปลี่ยนจาก memory เป็น data เพื่อความเป็นสากล
+  - data/cache              # แยกส่วน Cache ออกจากข้อมูลหลัก
   - config
-  - docs
-  - tests
-  - tests/unit
-  - tests/integration
-  - tests/e2e
-  - examples
-  - .github
-  - .github/workflows
+  - docs/architecture       # เน้นเอกสารเชิงโครงสร้าง
+  - tests/fixtures          # ข้อมูลสำหรับใช้รัน Test
 
 required_files:
   - package.json
   - tsconfig.json
-  - manifest.json
-  - config/mcp-config.yaml
-  - src/index.ts
-  - src/server/index.ts
-  - src/types/index.ts
-  - memory/memory_store.json
-  - memory/lineage_log.json
-  - memory/embedding_cache.json
-  - memory/tag_cache.json
-  - docs/audit_log.md
-  - docs/legacy_clues.md
-  - docs/changelog.md
-  - docs/api-reference.md
-  - docs/migration-guide.md
-  - docs/mcp-integration.md
-
-optional_folders:
-  - dist
-  - node_modules
-  - coverage
-  - schemas
-
-optional_files:
-  - .env
-  - .env.example
-  - .gitignore
-  - README.md
-  - LICENSE
-  - CONTRIBUTING.md
-  - init.ps1
-  - structure.schema.yaml
+  - src/index.ts            # Entry point สำหรับรัน server
+  - src/server/mcp-server.ts # คลาสหลักที่ขยายจาก @modelcontextprotocol/sdk
+  - config/settings.yaml    # การตั้งค่าแอปทั่วไป
+  - config/mcp-config.json  # ไฟล์สำหรับเชื่อมต่อกับ Claude/ChatGPT Desktop
+  - data/memory_store.json
+  - data/lineage_log.json
 
 validation_rules:
-  memory:
-    description: "Data storage directory"
-    writable: true
-    should_exist: ["memory_store.json", "lineage_log.json"]
-  
-  config:
-    description: "Configuration directory"
-    should_exist: ["mcp-config.yaml"]
-  
-  src:
-    description: "TypeScript source code"
-    should_exist: ["index.ts", "server/", "core/", "types/"]
-  
-  file_size_limits:
-    memory_store.json: "10MB"
-    lineage_log.json: "50MB"
-    embedding_cache.json: "100MB"
-    
+  # การจัดระเบียบข้อมูล (Data Separation)
+  data_integrity:
+    description: "แยก Persistence Data ออกจาก Transient Cache"
+    must_exist: ["memory_store.json"]
+    cache_location: "data/cache/"
+
+  # มาตรฐาน MCP (MCP Compliance)
+  mcp_standards:
+    description: "ต้องมีการแยกโมดูล Tools และ Resources ชัดเจน"
+    naming_convention: "camelCase"
+    required_exports: ["tools", "resources"]
+
+  # ประสิทธิภาพ (Performance & Limits)
+  storage_limits:
+    memory_store.json: "20MB"
+    cache/: "500MB"         # ขยายพื้นที่ให้ Cache ได้มากขึ้นเพื่อลด API Cost
+
+  # ความปลอดภัย (Security & Access Control)
   permissions:
-    memory/: "read-write"
-    config/: "read-only"
+    data/: "read-write"
     src/: "read-only"
-    dist/: "read-write"
+    config/: "read-only"
+    .env: "private"
+
+---
